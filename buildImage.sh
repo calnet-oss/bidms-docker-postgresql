@@ -57,9 +57,9 @@ docker build $ARGS -t bidms/postgresql:latest imageFiles || check_exit
 
 #
 # We want to temporarily start up the image so we can copy the contents of
-# /d1 to the host.  On subsequent container runs, we will mount
-# this host directory into the container.  i.e., we want to persist PostgreSQL
-# database data across container runs.
+# /var/lib/postgresql to the host.  On subsequent container runs, we will
+# mount this host directory into the container.  i.e., we want to persist
+# PostgreSQL database data across container runs.
 #
 if [ ! -z "$HOST_POSTGRESQL_DIRECTORY" ]; then
   if [ -e $HOST_POSTGRESQL_DIRECTORY ]; then
@@ -67,7 +67,7 @@ if [ ! -z "$HOST_POSTGRESQL_DIRECTORY" ]; then
     echo "If you want a clean install, delete $HOST_POSTGRESQL_DIRECTORY and re-run this script."
     exit
   fi
-  echo "Temporarily starting the container to copy /d1 to host"
+  echo "Temporarily starting the container to copy /var/lib/postgresql to host"
   NO_INTERACTIVE="true" NO_HOST_POSTGRESQL_DIRECTORY="true" ./runContainer.sh || check_exit
   TMP_POSTGRESQL_HOST_DIR=$(./getPostgresqlHostDir.sh)
   if [[ $? != 0 || -z "$TMP_POSTGRESQL_HOST_DIR" ]]; then

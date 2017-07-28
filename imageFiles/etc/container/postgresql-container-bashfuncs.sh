@@ -26,20 +26,22 @@
 # 
 
 function container_startup {
-  if [ -e /d1/shuttingdown ]; then
-    rm /d1/shuttingdown
+  if [ -e /var/lib/postgresql/shuttingdown ]; then
+    rm /var/lib/postgresql/shuttingdown
   fi
-  if [ -e /d1/cleanshutdown ]; then
-    rm /d1/cleanshutdown
+  if [ -e /var/lib/postgresql/cleanshutdown ]; then
+    rm /var/lib/postgresql/cleanshutdown
   fi
   /usr/sbin/syslogd
+  /etc/init.d/postgresql start
 }
 
 function container_shutdown {
-  touch /d1/shuttingdown
+  touch /var/lib/postgresql/shuttingdown
+  /etc/init.d/postgresql stop
   kill -TERM $(cat /var/run/syslog.pid)
-  echo "Processes still running after shutdown:" > /d1/cleanshutdown
-  ps -uxaw >> /d1/cleanshutdown
-  rm /d1/shuttingdown
+  echo "Processes still running after shutdown:" > /var/lib/postgresql/cleanshutdown
+  ps -uxaw >> /var/lib/postgresql/cleanshutdown
+  rm /var/lib/postgresql/shuttingdown
   exit
 }

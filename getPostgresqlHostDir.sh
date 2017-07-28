@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONTAINER_DIR="/d1"
+CONTAINER_DIR="/var/lib/postgresql"
 INSPECT=$(docker inspect bidms-postgresql | sed -e '/Source/,/Destination/!d')
 
 while read -ra arr; do

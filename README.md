@@ -17,12 +17,12 @@ Dockerfile, is licensed under the [BSD two-clause license](LICENSE.txt).
 
 Copy `config.env.template` to `config.env` and edit to set config values.
 
-Create `imageFiles/tmp_passwords/pg_admin_pw` file and set a PostgreSQL
+Create `imageFiles/tmp_passwords/postgres_pw` file and set a PostgreSQL
 Administrator password, which is the 'postgres' user in the database.
 
 Make sure it's only readable by the owner:
 ```
-chmod 600 imageFiles/tmp_passwords/pg_admin_pw
+chmod 600 imageFiles/tmp_passwords/postgres_pw
 ```
 
 This image depends on the the base BIDMS Debian Docker image from the
@@ -75,8 +75,9 @@ docker ps
 ## Database Persistence
 
 Docker will mount the host directory specified in
-`HOST_POSTGRESQL_DIRECTORY` from `config.env` within the container as `/d1`
-and this is how the database is persisted across container runs.
+`HOST_POSTGRESQL_DIRECTORY` from `config.env` within the container as
+`/var/lib/postgresql` and this is how the database is persisted across
+container runs.
 
 As mentioned in the build image step, the `buildImage.sh` script will
 initialize an empty database as long as the `HOST_POSTGRESQL_DIRECTORY`

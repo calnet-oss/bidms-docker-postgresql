@@ -67,7 +67,7 @@ fi
 
 if [[ -z "$NO_HOST_POSTGRESQL_DIRECTORY" && ! -z "$HOST_POSTGRESQL_DIRECTORY" ]]; then
   echo "HOST_POSTGRESQL_DIRECTORY=$HOST_POSTGRESQL_DIRECTORY"
-  MOUNTPARAMS="-v $HOST_POSTGRESQL_DIRECTORY:/d1"
+  MOUNTPARAMS="-v $HOST_POSTGRESQL_DIRECTORY:/var/lib/postgresql"
 else
   # Docker will choose where it wants to put it on the host.
   # Use docker inspect bidms-postgresql to find out where.
