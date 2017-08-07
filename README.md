@@ -90,3 +90,31 @@ running the `buildImage.sh` script on then you'll probably want to let
 `buildImage.sh` initialize a database and then copy the
 `HOST_POSTGRESQL_DIRECTORY` to all the machines that you will be running the
 image on.  When copying, be careful about preserving file permissions.
+
+## Disabling Linux Transparent Hugepages
+
+If you're running Linux, it's 
+[a good idea to disable kernel transparent hugepages](https://askubuntu.com/questions/597372/how-do-i-modify-sys-kernel-mm-transparent-hugepage-enabled)
+because it is not recommended for database machines and can hurt performance. 
+This should be done on the host running the PostgreSQL docker container.
+
+There are multiple ways to do this, but if you're running a flavor of Linux
+with `/etc/default/grub` (such as Debian or Ubuntu), then the easiest way is
+to have a `GRUB_CMDLINE_LINUX_DEFAULT` line that looks something like this:
+```
+GRUB_CMDLINE_LINUX_DEFAULT="transparent_hugepage=never"
+```
+and then execute:
+```
+sudo update-grub
+```
+
+Reboot and confirm with:
+```
+cat /sys/kernel/mm/transparent_hugepage/enabled
+```
+
+It should show:
+```
+always madvise [never]
+```
