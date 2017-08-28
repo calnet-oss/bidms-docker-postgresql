@@ -57,6 +57,14 @@ fi
 echo "Using config values from $CONFIG_FILE"
 . $CONFIG_FILE || check_exit
 
+if [ ! -z "$NETWORK" ]; then
+  echo "NETWORK=$NETWORK"
+  NETWORKPARAMS+="--network $NETWORK "
+else
+  echo "ERROR: Required NETWORK value missing from $CONFIG_FILE"
+  exit 1
+fi
+
 if [ ! -z "$LOCAL_POSTGRESQL_PORT" ]; then
   echo "LOCAL_DIR_PORT=$LOCAL_POSTGRESQL_PORT"
 else
