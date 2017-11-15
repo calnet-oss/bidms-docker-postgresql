@@ -66,9 +66,15 @@ RUN /etc/init.d/postgresql stop \
   && cat /tmp/tmp_passwords/postgres_pw >> /var/lib/postgresql/.pgpass \
   && chown postgres:postgres /var/lib/postgresql/.pgpass \
   && mv /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf.ORIG.${POSTGRESQL_VERSION} \
-  && mv /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf.ORIG.${POSTGRESQL_VERSION}
+  && ln -fs /etc/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf \
+  && mv /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf.ORIG.${POSTGRESQL_VERSION} \
+  && ln -fs /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf \
+  && mv /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf.ORIG.${POSTGRESQL_VERSION} \
+  && ln -fs /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf \
+  && mv /etc/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf /etc/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf.ORIG \
+  && mv /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf.ORIG
 
-COPY postgresql_main/ /var/lib/postgresql/${POSTGRESQL_VERSION}/main/
+COPY postgresql_main/ /etc/postgresql/${POSTGRESQL_VERSION}/main/
 
 # Generate a self-signed key pair for TLS
 RUN echo "temporary" > /tmp/tmp_passwords/tls_key_passphrase \
