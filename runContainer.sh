@@ -89,11 +89,31 @@ elif [ ! -z "$NO_INTERACTIVE" ]; then
   ENTRYPOINT_ARGS="detached"
 fi
 
-docker run $INTERACTIVE_PARAMS --rm --name "bidms-postgresql" \
+if [ ! -z "$RESTART_ALWAYS" ]; then
+  echo "Always restarting"
+  RESTARTPARAMS="--restart always"
+else
+  echo "Deleting container on exit"
+  RESTARTPARAMS="--rm"
+fi
+
+if [ ! -z "$USE_SUDO" ]; then
+  SUDO=sudo
+fi
+
+if [ -z "$DOCKER_REPOSITORY" ]; then
+  IMAGE="bidms/postgresql:latest"
+else
+  IMAGE="${DOCKER_REPOSITORY}/bidms/postgresql:latest"
+fi
+echo "IMAGE=$IMAGE"
+
+$SUDO docker run $INTERACTIVE_PARAMS --name "bidms-postgresql" \
   $MOUNTPARAMS \
+  $RESTARTPARAMS \
   -p $LOCAL_POSTGRESQL_PORT:5432 \
   $* \
-  bidms/postgresql:latest \
+  $IMAGE \
   $ENTRYPOINT_ARGS || check_exit
 
 if [ ! -z "$NO_INTERACTIVE" ]; then
