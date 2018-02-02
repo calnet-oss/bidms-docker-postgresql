@@ -46,7 +46,6 @@ RUN set -x \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /core
 
-COPY root/ /root/
 COPY tmp_passwords/ /tmp/tmp_passwords/
 RUN chown postgres:postgres /tmp/tmp_passwords/postgres_pw
 
