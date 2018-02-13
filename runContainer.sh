@@ -110,6 +110,7 @@ echo "IMAGE=$IMAGE"
 
 $SUDO docker run $INTERACTIVE_PARAMS --name "bidms-postgresql" \
   $MOUNTPARAMS \
+  $NETWORKPARAMS \
   $RESTARTPARAMS \
   -p $LOCAL_POSTGRESQL_PORT:5432 \
   $* \
