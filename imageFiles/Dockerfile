@@ -47,7 +47,7 @@ RUN set -x \
   && rm -rf /var/lib/apt/lists/* /tmp/* /core
 
 COPY tmp_passwords/ /tmp/tmp_passwords/
-RUN chown postgres:postgres /tmp/tmp_passwords/postgres_pw
+RUN chown postgres:postgres /tmp/tmp_passwords/postgres_pw /tmp/tmp_passwords/registry_pw
 
 # We're not interested in the initial PostgreSQL data files created during
 # the installation of the PostgreSQL packages, so we delete the data
@@ -63,7 +63,9 @@ RUN /etc/init.d/postgresql stop \
   && echo -n "localhost:5432:*:postgres:" > /var/lib/postgresql/.pgpass \
   && chmod 600 /var/lib/postgresql/.pgpass \
   && cat /tmp/tmp_passwords/postgres_pw >> /var/lib/postgresql/.pgpass \
+  && echo "" >> /var/lib/postgresql/.pgpass \
   && chown postgres:postgres /var/lib/postgresql/.pgpass \
+  && echo "\nexport PGPASSFILE=/var/lib/postgresql/.pgpass" >> /root/.bashrc \
   && mv /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf.ORIG.${POSTGRESQL_VERSION} \
   && mv /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf.ORIG.${POSTGRESQL_VERSION} \
   && mv /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf.ORIG.${POSTGRESQL_VERSION} \
@@ -100,6 +102,23 @@ RUN echo "temporary" > /tmp/tmp_passwords/tls_key_passphrase \
   && chown postgres:postgres /var/lib/postgresql/certs/* \
   && rm -f /tmp/tmp_passwords/tls_key_passphrase \
        /tmp/tmp_passwords/tmp_privkey.pem
+
+# Add the registry PostgreSQL user, create the registry database and add
+# extensions.
+RUN echo -n "'" > /tmp/tmp_passwords/registry_pw.tmp \
+  && cat /tmp/tmp_passwords/registry_pw >> /tmp/tmp_passwords/registry_pw.tmp \
+  && echo "'" >> /tmp/tmp_passwords/registry_pw.tmp \
+  && sed -f /tmp/tmp_passwords/replaceRegistryUserPw.sed -i /tmp/tmp_passwords/createRegistryUser.sql \
+  && /etc/init.d/postgresql start \
+  && sudo -u postgres PGPASSFILE="/var/lib/postgresql/.pgpass" psql -f /tmp/tmp_passwords/createRegistryUser.sql \
+  && echo -n "localhost:5432:*:registry:" >> /var/lib/postgresql/.pgpass \
+  && cat /tmp/tmp_passwords/registry_pw >> /var/lib/postgresql/.pgpass \
+  && echo "" >> /var/lib/postgresql/.pgpass \
+  && sudo -u postgres PGPASSFILE="/var/lib/postgresql/.pgpass" createdb --owner=registry --encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8 registry \
+  && sudo -u postgres PGPASSFILE="/var/lib/postgresql/.pgpass" psql -c "CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;" registry \
+  && sudo -u postgres PGPASSFILE="/var/lib/postgresql/.pgpass" psql -c "CREATE EXTENSION IF NOT EXISTS fuzzystrmatch WITH SCHEMA public;" registry \
+  && sudo -u postgres PGPASSFILE="/var/lib/postgresql/.pgpass" psql -c "CREATE EXTENSION IF NOT EXISTS btree_gin WITH SCHEMA public;" registry \
+  && /etc/init.d/postgresql stop
 
 RUN rm -rf /tmp/tmp_passwords /core
 
