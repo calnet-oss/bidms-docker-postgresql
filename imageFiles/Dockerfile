@@ -101,7 +101,7 @@ RUN echo "temporary" > /tmp/tmp_passwords/tls_key_passphrase \
   && rm -f /tmp/tmp_passwords/tls_key_passphrase \
        /tmp/tmp_passwords/tmp_privkey.pem
 
-RUN rm -rf /tmp/tmp_passwords
+RUN rm -rf /tmp/tmp_passwords /core
 
 EXPOSE 5432
 
