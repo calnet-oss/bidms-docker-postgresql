@@ -1,3 +1,5 @@
 config.env
 imageFiles/tmp_passwords/postgres_pw
 imageFiles/tmp_passwords/registry_pw
+imageFiles/tls/privkey.pem
+imageFiles/tls/pubkey.pem

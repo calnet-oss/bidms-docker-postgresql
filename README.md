@@ -18,12 +18,20 @@ Dockerfile, is licensed under the [BSD two-clause license](LICENSE.txt).
 Copy `config.env.template` to `config.env` and edit to set config values.
 
 Create `imageFiles/tmp_passwords/postgres_pw` file and set a PostgreSQL
-Administrator password, which is the 'postgres' user in the database.
+Administrator password, which is the 'postgres' user in the database.  Do
+the same for the `registry` account password, in
+`imageFiles/tmp_passwords/registry_pw`.
 
-Make sure it's only readable by the owner:
+Make sure these are only readable by the owner:
 ```
-chmod 600 imageFiles/tmp_passwords/postgres_pw
+chmod 600 imageFiles/tmp_passwords/postgres_pw \
+  imageFiles/tmp_passwords/registry_pw
 ```
+
+Create your TLS certs in `imageFiles/tls`.  You need an unencrypted
+privkey.pem and a pubkey.pem.  If you want to generate a self-signed
+certificate, you can use the [generateTLSCert.sh](generateTLSCert.sh)
+script.
 
 This image depends on the the base BIDMS Debian Docker image from the
 [bidms-docker-debian-base](http://www.github.com/calnet-oss/bidms-docker-debian-base)

@@ -86,22 +86,10 @@ RUN chown postgres:postgres /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postg
   && chown postgres:postgres /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf \
   && chmod 600 /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf
 
-# Generate a self-signed key pair for TLS
-RUN echo "temporary" > /tmp/tmp_passwords/tls_key_passphrase \
-  && chmod 600 /tmp/tmp_passwords/tls_key_passphrase \
-  && mkdir /var/lib/postgresql/certs \
-  && openssl req -x509 -newkey rsa:4096 -days 10000 \
-       -keyout /tmp/tmp_passwords/tmp_privkey.pem \
-       -out /var/lib/postgresql/certs/pubkey.pem \
-       -subj "/OU=BIDMS PostgreSQL Docker Dev/CN=localhost" \
-       -passout file:/tmp/tmp_passwords/tls_key_passphrase \
-  && openssl rsa -in /tmp/tmp_passwords/tmp_privkey.pem \
-       -out /var/lib/postgresql/certs/privkey.pem \
-       -passin file:/tmp/tmp_passwords/tls_key_passphrase \
-  && chmod 600 /var/lib/postgresql/certs/privkey.pem \
-  && chown postgres:postgres /var/lib/postgresql/certs/* \
-  && rm -f /tmp/tmp_passwords/tls_key_passphrase \
-       /tmp/tmp_passwords/tmp_privkey.pem
+# Copy the TLS key pair
+COPY tls/*.pem /var/lib/postgresql/certs/
+RUN chmod 600 /var/lib/postgresql/certs/privkey.pem \
+  && chown postgres:postgres /var/lib/postgresql/certs/*
 
 # Add the registry PostgreSQL user, create the registry database and add
 # extensions.
