@@ -60,40 +60,42 @@ fi
 echo "Using ARGS: $ARGS"
 docker build $ARGS -t bidms/postgresql:latest imageFiles || check_exit
 
-#
-# We want to temporarily start up the image so we can copy the contents of
-# /var/lib/postgresql to the host.  On subsequent container runs, we will
-# mount this host directory into the container.  i.e., we want to persist
-# PostgreSQL database data across container runs.
-#
-if [ ! -z "$HOST_POSTGRESQL_DIRECTORY" ]; then
-  if [ -e $HOST_POSTGRESQL_DIRECTORY ]; then
-    echo "$HOST_POSTGRESQL_DIRECTORY on the host already exists.  Not copying anything."
-    echo "If you want a clean install, delete $HOST_POSTGRESQL_DIRECTORY and re-run this script."
-    exit
-  fi
-  echo "Temporarily starting the container to copy /var/lib/postgresql to host"
-  NO_INTERACTIVE="true" NO_HOST_POSTGRESQL_DIRECTORY="true" ./runContainer.sh || check_exit
-  TMP_POSTGRESQL_HOST_DIR=$(./getPostgresqlHostDir.sh)
-  if [[ $? != 0 || -z "$TMP_POSTGRESQL_HOST_DIR" ]]; then
-    echo "./getPostgresqlHostDir.sh failed"
-    echo "Stopping the container."
-    docker stop bidms-postgresql
-    exit 1
-  fi
+if [ $USE_HOST_VOLUMES ]; then
+  #
+  # We want to temporarily start up the image so we can copy the contents of
+  # /var/lib/postgresql to the host.  On subsequent container runs, we will
+  # mount this host directory into the container.  i.e., we want to persist
+  # PostgreSQL database data across container runs.
+  #
+  if [ ! -z "$HOST_POSTGRESQL_DIRECTORY" ]; then
+    if [ -e $HOST_POSTGRESQL_DIRECTORY ]; then
+      echo "$HOST_POSTGRESQL_DIRECTORY on the host already exists.  Not copying anything."
+      echo "If you want a clean install, delete $HOST_POSTGRESQL_DIRECTORY and re-run this script."
+      exit
+    fi
+    echo "Temporarily starting the container to copy /var/lib/postgresql to host"
+    NO_INTERACTIVE="true" NO_HOST_POSTGRESQL_DIRECTORY="true" ./runContainer.sh || check_exit
+    TMP_POSTGRESQL_HOST_DIR=$(./getPostgresqlHostDir.sh)
+    if [[ $? != 0 || -z "$TMP_POSTGRESQL_HOST_DIR" ]]; then
+      echo "./getPostgresqlHostDir.sh failed"
+      echo "Stopping the container."
+      docker stop bidms-postgresql
+      exit 1
+    fi
 
-  echo "Temporary host PostgreSQL directory: $TMP_POSTGRESQL_HOST_DIR"
-  echo "$HOST_POSTGRESQL_DIRECTORY does not yet exist.  Copying from temporary location."
-  echo "You must have sudo access for this to work and you may be prompted for a sudo password."
-  sudo cp -pr $TMP_POSTGRESQL_HOST_DIR $HOST_POSTGRESQL_DIRECTORY
-  if [ $? != 0 ]; then
-    echo "copy from $TMP_POSTGRESQL_HOST_DIR to $HOST_POSTGRESQL_DIRECTORY failed"
+    echo "Temporary host PostgreSQL directory: $TMP_POSTGRESQL_HOST_DIR"
+    echo "$HOST_POSTGRESQL_DIRECTORY does not yet exist.  Copying from temporary location."
+    echo "You must have sudo access for this to work and you may be prompted for a sudo password."
+    sudo cp -pr $TMP_POSTGRESQL_HOST_DIR $HOST_POSTGRESQL_DIRECTORY
+    if [ $? != 0 ]; then
+      echo "copy from $TMP_POSTGRESQL_HOST_DIR to $HOST_POSTGRESQL_DIRECTORY failed"
+      echo "Stopping the container."
+      docker stop bidms-postgresql
+      exit 1
+    fi
+    echo "Successfully copied to $HOST_POSTGRESQL_DIRECTORY"
+
     echo "Stopping the container."
-    docker stop bidms-postgresql
-    exit 1
+    docker stop bidms-postgresql || check_exit
   fi
-  echo "Successfully copied to $HOST_POSTGRESQL_DIRECTORY"
-  
-  echo "Stopping the container."
-  docker stop bidms-postgresql || check_exit
 fi

@@ -115,6 +115,8 @@ EXPOSE 5432
 COPY etc/container/ /etc/container/
 ENTRYPOINT ["/etc/container/postgresql-entrypoint.sh", "interactive"]
 
-# Use 'docker inspect <name>' to find the volume files on the host.
-# <name> is the value of the --name parameter when invoking docker run.
-VOLUME /var/lib/postgresql
+# We've commented this out because this image is used as a base for other
+# images and Docker doesn't do what we want when we go to update
+# /var/lib/postgresql in child images if we specify a VOLUME in the parent.
+# If you want this, uncomment here and set USE_HOST_VOLUMES=1 in config.env.
+#VOLUME /var/lib/postgresql
