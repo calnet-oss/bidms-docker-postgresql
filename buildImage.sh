@@ -86,6 +86,8 @@ if [ $USE_HOST_VOLUMES ]; then
     echo "Temporary host PostgreSQL directory: $TMP_POSTGRESQL_HOST_DIR"
     echo "$HOST_POSTGRESQL_DIRECTORY does not yet exist.  Copying from temporary location."
     echo "You must have sudo access for this to work and you may be prompted for a sudo password."
+    echo "Waiting 10 seconds for PostgreSQL to start."
+    sleep 10
     sudo cp -pr $TMP_POSTGRESQL_HOST_DIR $HOST_POSTGRESQL_DIRECTORY
     if [ $? != 0 ]; then
       echo "copy from $TMP_POSTGRESQL_HOST_DIR to $HOST_POSTGRESQL_DIRECTORY failed"
