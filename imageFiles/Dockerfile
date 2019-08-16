@@ -108,6 +108,17 @@ RUN echo -n "'" > /tmp/tmp_passwords/registry_pw.tmp \
   && sudo -u postgres PGPASSFILE="/var/lib/postgresql/.pgpass" psql -c "CREATE EXTENSION IF NOT EXISTS btree_gin WITH SCHEMA public;" registry \
   && /etc/init.d/postgresql stop
 
+# Make postgresql.conf changes
+ARG PG_SHARED_BUFFERS="768MB"
+ARG PG_WORK_MEM="32MB"
+# wal_buffers should be some percentage of shared_buffers.
+ARG PG_WAL_BUFFERS="96MB"
+ARG PG_CHECKPOINT_TIMEOUT="5min"
+RUN set -x && result=$(sed "s/shared_buffers = 128MB/shared_buffers = $PG_SHARED_BUFFERS/" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf | tee /tmp/postgresql.conf | egrep "^shared_buffers = $PG_SHARED_BUFFERS") && [ ! -s "$result" ] && mv /tmp/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
+RUN set -x && result=$(sed "s/#work_mem = 4MB/work_mem = $PG_WORK_MEM/" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf | tee /tmp/postgresql.conf | egrep "^work_mem = $PG_WORK_MEM") && [ ! -s "$result" ] && mv /tmp/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
+RUN set -x && result=$(sed "s/#wal_buffers = -1/wal_buffers = $PG_WAL_BUFFERS/" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf | tee /tmp/postgresql.conf | egrep "^wal_buffers = $PG_WAL_BUFFERS") && [ ! -s "$result" ] && mv /tmp/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
+RUN set -x && result=$(sed "s/checkpoint_timeout = 15min/checkpoint_timeout = $PG_CHECKPOINT_TIMEOUT/" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf | tee /tmp/postgresql.conf | egrep "^wal_buffers = $PG_WAL_BUFFERS") && [ ! -s "$result" ] && mv /tmp/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
+
 RUN rm -rf /tmp/tmp_passwords /core
 
 EXPOSE 5432
