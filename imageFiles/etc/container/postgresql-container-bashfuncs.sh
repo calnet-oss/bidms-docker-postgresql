@@ -34,11 +34,13 @@ function container_startup {
   fi
   /usr/sbin/syslogd
   /etc/init.d/postgresql start
+  /etc/init.d/cron start
 }
 
 function container_shutdown {
   touch /var/lib/postgresql/shuttingdown
   /etc/init.d/postgresql stop
+  /etc/init.d/cron stop
   kill -TERM $(cat /var/run/syslog.pid)
   echo "Processes still running after shutdown:" > /var/lib/postgresql/cleanshutdown
   ps -uxaw >> /var/lib/postgresql/cleanshutdown

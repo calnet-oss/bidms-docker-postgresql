@@ -42,7 +42,7 @@ RUN set -x \
   && apt-get install -y postgresql-${POSTGRESQL_VERSION} \
        postgresql-client-${POSTGRESQL_VERSION} \
        postgresql-contrib-${POSTGRESQL_VERSION} \
-       openssl \
+       openssl cron \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /core
 
