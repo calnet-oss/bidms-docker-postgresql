@@ -24,16 +24,16 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
-FROM bidms/debian_base
+FROM bidms/debian_base:buster
 
 ARG APT_PROXY_URL=
 RUN if [ ! -z "$APT_PROXY_URL" ]; then echo "Acquire::http::Proxy \"$APT_PROXY_URL\";" > /etc/apt/apt.conf.d/00aptproxy; else echo "not using apt proxy"; fi
 
-ARG POSTGRESQL_VERSION=9.6
+ARG POSTGRESQL_VERSION=12
 
 RUN set -x \
   && export DEBIAN_FRONTEND=noninteractive \
-  && echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+  && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main ${POSTGRESQL_VERSION}" > /etc/apt/sources.list.d/pgdg.list \
   && apt-get install -y gnupg2 \
   && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - \
   && apt-get purge -y gnupg2 \
@@ -146,7 +146,7 @@ RUN set -x \
   && result=$(egrep "^ssl_prefer_server_ciphers = on" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
   && result=$(egrep "^ssl_cert_file = '/var/lib/postgresql/certs/pubkey.pem'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
   && result=$(egrep "^ssl_key_file = '/var/lib/postgresql/certs/privkey.pem'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
-  && result=$(egrep "^password_encryption = on" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^password_encryption = scram-sha-256" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
   && result=$(egrep "^max_prepared_transactions = $PG_MAX_PREPARED_TRANSACTIONS" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
   && result=$(egrep "^shared_preload_libraries = 'pg_stat_statements'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
   && result=$(egrep "^wal_level = replica" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
