@@ -72,12 +72,12 @@ RUN /etc/init.d/postgresql stop \
   && mv /etc/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf /etc/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf.ORIG \
   && mv /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf.ORIG \
   && mv /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf.ORIG \
+  && cp /etc/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf.ORIG  /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf \
+  && cp /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf.ORIG  /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf \
   && cp /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf.ORIG /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf \
   && ln -fs /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf /etc/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf \
   && ln -fs /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf \
   && ln -fs /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf /etc/postgresql/${POSTGRESQL_VERSION}/main/pg_ident.conf
-
-COPY postgresql_main/ /var/lib/postgresql/${POSTGRESQL_VERSION}/main/
 
 RUN chown postgres:postgres /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf \
   && chmod 600 /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf \
@@ -109,17 +109,73 @@ RUN echo -n "'" > /tmp/tmp_passwords/registry_pw.tmp \
   && /etc/init.d/postgresql stop
 
 # Make postgresql.conf changes
+ARG PG_MAX_CONNECTIONS="500"
+ARG PG_MAX_PREPARED_TRANSACTIONS="500"
 ARG PG_SHARED_BUFFERS="768MB"
 ARG PG_WORK_MEM="32MB"
-# wal_buffers should be some percentage of shared_buffers.
+# wal_buffers should be some percentage of shared_buffers.  Unless arguments
+# overriden, 96M/768M = 12.5%.
 ARG PG_WAL_BUFFERS="96MB"
 ARG PG_CHECKPOINT_TIMEOUT="5min"
-RUN set -x && result=$(sed "s/shared_buffers = 128MB/shared_buffers = $PG_SHARED_BUFFERS/" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf | tee /tmp/postgresql.conf | egrep "^shared_buffers = $PG_SHARED_BUFFERS") && [ ! -s "$result" ] && mv /tmp/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
-RUN set -x && result=$(sed "s/#work_mem = 4MB/work_mem = $PG_WORK_MEM/" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf | tee /tmp/postgresql.conf | egrep "^work_mem = $PG_WORK_MEM") && [ ! -s "$result" ] && mv /tmp/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
-RUN set -x && result=$(sed "s/#wal_buffers = -1/wal_buffers = $PG_WAL_BUFFERS/" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf | tee /tmp/postgresql.conf | egrep "^wal_buffers = $PG_WAL_BUFFERS") && [ ! -s "$result" ] && mv /tmp/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
-RUN set -x && result=$(sed "s/checkpoint_timeout = 15min/checkpoint_timeout = $PG_CHECKPOINT_TIMEOUT/" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf | tee /tmp/postgresql.conf | egrep "^wal_buffers = $PG_WAL_BUFFERS") && [ ! -s "$result" ] && mv /tmp/postgresql.conf /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
+ARG PG_MAX_WAL_SIZE="2GB"
+# Set to to minutes to account for possible slow vacuuming, checkpointing,
+# etc.  These internal PostgreSQL operations may or may not create locks.
+ARG PG_LOCK_TIMEOUT="20min"
+ARG PG_DEADLOCK_TIMEOUT="10s"
+COPY postgresql_conf.sed /tmp
+# replace variables in postgresql_conf.sed and then run sed script to do the
+# string replacements for postgresql.conf
+RUN set -x \
+  && sed -i "s/\$PG_MAX_CONNECTIONS/$PG_MAX_CONNECTIONS/" /tmp/postgresql_conf.sed \
+  && sed -i "s/\$PG_MAX_PREPARED_TRANSACTIONS/$PG_MAX_PREPARED_TRANSACTIONS/" /tmp/postgresql_conf.sed \
+  && sed -i "s/\$PG_SHARED_BUFFERS/$PG_SHARED_BUFFERS/" /tmp/postgresql_conf.sed \
+  && sed -i "s/\$PG_WORK_MEM/$PG_WORK_MEM/" /tmp/postgresql_conf.sed \
+  && sed -i "s/\$PG_WAL_BUFFERS/$PG_WAL_BUFFERS/" /tmp/postgresql_conf.sed \
+  && sed -i "s/\$PG_CHECKPOINT_TIMEOUT/$PG_CHECKPOINT_TIMEOUT/" /tmp/postgresql_conf.sed \
+  && sed -i "s/\$PG_MAX_WAL_SIZE/$PG_MAX_WAL_SIZE/" /tmp/postgresql_conf.sed \
+  && sed -i "s/\$PG_LOCK_TIMEOUT/$PG_LOCK_TIMEOUT/" /tmp/postgresql_conf.sed \
+  && sed -i "s/\$PG_DEADLOCK_TIMEOUT/$PG_DEADLOCK_TIMEOUT/" /tmp/postgresql_conf.sed \
+  && sed -f /tmp/postgresql_conf.sed -i /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf
 
-RUN rm -rf /tmp/tmp_passwords /core
+# Verify postgresql.conf values.  We do this because the original strings
+# that are replaced can change from version to version.
+RUN set -x \
+  && result=$(egrep "^listen_addresses = '*'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^max_connections = $PG_MAX_CONNECTIONS" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^ssl_ciphers = 'TLSv1.2:!aNULL:!eNULL'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^ssl_prefer_server_ciphers = on" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^ssl_cert_file = '/var/lib/postgresql/certs/pubkey.pem'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^ssl_key_file = '/var/lib/postgresql/certs/privkey.pem'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^password_encryption = on" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^max_prepared_transactions = $PG_MAX_PREPARED_TRANSACTIONS" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^shared_preload_libraries = 'pg_stat_statements'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^wal_level = replica" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^shared_buffers = $PG_SHARED_BUFFERS" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^work_mem = $PG_WORK_MEM" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^wal_buffers = $PG_WAL_BUFFERS" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^checkpoint_timeout = $PG_CHECKPOINT_TIMEOUT" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^max_wal_size = $PG_MAX_WAL_SIZE" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^archive_mode = off" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^log_checkpoints = on" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^log_lock_waits = on" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^log_timezone = 'localtime'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^track_io_timing = on" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^lock_timeout = $PG_LOCK_TIMEOUT" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^timezone = 'localtime'" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^deadlock_timeout = $PG_DEADLOCK_TIMEOUT" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/postgresql.conf) && [ ! -z "$result" ]
+
+# Make pg_hba.conf changes
+COPY pg_hba_conf.sed /tmp
+RUN set -x \
+  && sed -f /tmp/pg_hba_conf.sed -i /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf
+
+# Verify pg_hba.conf values.  We do this because the original strings
+# that are replaced can change from version to version.
+RUN set -x \
+  && result=$(egrep "^local   all             all                                     md5" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^hostssl all             all             172.18.0.0/24           md5" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf) && [ ! -z "$result" ]
+
+RUN rm -rf /tmp/tmp_passwords /tmp/postgresql_conf.sed /tmp/pg_hba_conf.sed /core
 
 EXPOSE 5432
 
