@@ -29,7 +29,7 @@ FROM bidms/debian_base:buster
 ARG APT_PROXY_URL=
 RUN if [ ! -z "$APT_PROXY_URL" ]; then echo "Acquire::http::Proxy \"$APT_PROXY_URL\";" > /etc/apt/apt.conf.d/00aptproxy; else echo "not using apt proxy"; fi
 
-ARG POSTGRESQL_VERSION=12
+ARG POSTGRESQL_VERSION=13
 
 RUN set -x \
   && export DEBIAN_FRONTEND=noninteractive \
