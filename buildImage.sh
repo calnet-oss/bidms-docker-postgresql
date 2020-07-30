@@ -50,6 +50,14 @@ if [ ! -z "$NETWORK" ]; then
   ARGS+="--network $NETWORK "
 fi
 
+if [ ! -z "$POSTGRESQL_VERSION" ]; then
+  echo "POSTGRESQL_VERSION=$POSTGRESQL_VERSION"
+  ARGS+="--build-arg POSTGRESQL_VERSION=$POSTGRESQL_VERSION "
+else
+  echo "ERROR: Required POSTGRESQL_VERSION value missing from $CONFIG_FILE"
+  exit 1
+fi
+
 if [ ! -z "$APT_PROXY_URL" ]; then
   ARGS+="--build-arg APT_PROXY_URL=$APT_PROXY_URL "
 elif [ -e $HOME/.aptproxy ]; then
@@ -58,7 +66,7 @@ elif [ -e $HOME/.aptproxy ]; then
 fi
 
 echo "Using ARGS: $ARGS"
-docker build $ARGS -t bidms/postgresql:latest imageFiles || check_exit
+docker build $ARGS -t bidms/postgresql:${POSTGRESQL_VERSION} imageFiles || check_exit
 
 if [ $USE_HOST_VOLUMES ]; then
   #
