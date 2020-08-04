@@ -57,8 +57,10 @@ elif [ -e $HOME/.aptproxy ]; then
   ARGS+="--build-arg APT_PROXY_URL=$apt_proxy_url "
 fi
 
+ARGS+="--build-arg POSTGRESQL_VERSION=$POSTGRESQL_VERSION "
+
 echo "Using ARGS: $ARGS"
-docker build $ARGS -t bidms/postgresql:latest imageFiles || check_exit
+docker build $ARGS -t bidms/postgresql:${POSTGRESQL_VERSION} imageFiles || check_exit
 
 if [ $USE_HOST_VOLUMES ]; then
   #

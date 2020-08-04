@@ -102,9 +102,9 @@ if [ ! -z "$USE_SUDO" ]; then
 fi
 
 if [ -z "$DOCKER_REPOSITORY" ]; then
-  IMAGE="bidms/postgresql:latest"
+  IMAGE="bidms/postgresql:${POSTGRESQL_VERSION}"
 else
-  IMAGE="${DOCKER_REPOSITORY}/bidms/postgresql:latest"
+  IMAGE="${DOCKER_REPOSITORY}/bidms/postgresql:${POSTGRESQL_VERSION}"
 fi
 echo "IMAGE=$IMAGE"
 
