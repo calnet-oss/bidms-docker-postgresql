@@ -45,6 +45,15 @@ the argument defaults in the Dockerfile will be used.
 EOF
 fi
 
+if [ -z "$BUILDTIME_CMD" ]; then
+  # Can be overriden in config.env to be buildah instead.
+  BUILDTIME_CMD=docker
+fi
+if [ -z "$RUNTIME_CMD" ]; then
+  # Can be overriden in config.env to be podman instead.
+  RUNTIME_CMD=docker
+fi
+
 if [ ! -z "$NETWORK" ]; then
   echo "NETWORK=$NETWORK"
   ARGS+="--network $NETWORK "
@@ -65,8 +74,14 @@ elif [ -e $HOME/.aptproxy ]; then
   ARGS+="--build-arg APT_PROXY_URL=$apt_proxy_url "
 fi
 
+if [ ! -z "$(echo \"$BUILDTIME_CMD\" | grep buildah)" ]; then
+  build_cmd="$BUILDTIME_CMD build-using-dockerfile"
+else
+  build_cmd="$BUILDTIME_CMD build"
+fi
+
 echo "Using ARGS: $ARGS"
-docker build $ARGS -t bidms/postgresql:${POSTGRESQL_VERSION} imageFiles || check_exit
+$build_cmd $ARGS -t bidms/postgresql:${POSTGRESQL_VERSION} imageFiles || check_exit
 
 if [ $USE_HOST_VOLUMES ]; then
   #
@@ -87,7 +102,7 @@ if [ $USE_HOST_VOLUMES ]; then
     if [[ $? != 0 || -z "$TMP_POSTGRESQL_HOST_DIR" ]]; then
       echo "./getPostgresqlHostDir.sh failed"
       echo "Stopping the container."
-      docker stop bidms-postgresql
+      $RUNTIME_CMD stop bidms-postgresql
       exit 1
     fi
 
@@ -100,12 +115,12 @@ if [ $USE_HOST_VOLUMES ]; then
     if [ $? != 0 ]; then
       echo "copy from $TMP_POSTGRESQL_HOST_DIR to $HOST_POSTGRESQL_DIRECTORY failed"
       echo "Stopping the container."
-      docker stop bidms-postgresql
+      $RUNTIME_CMD stop bidms-postgresql
       exit 1
     fi
     echo "Successfully copied to $HOST_POSTGRESQL_DIRECTORY"
 
     echo "Stopping the container."
-    docker stop bidms-postgresql || check_exit
+    $RUNTIME_CMD stop bidms-postgresql || check_exit
   fi
 fi

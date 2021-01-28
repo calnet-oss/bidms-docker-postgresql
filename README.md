@@ -1,10 +1,9 @@
 ## Purpose
 
-This [Docker](http://www.docker.com/) image runs a
-[PostgreSQL](http://www.postgresql.org/) database server and exposes the
-database port on 5432.
+This container image runs a [PostgreSQL](http://www.postgresql.org/)
+database server and exposes the database port on 5432.
 
-The author does not currently publish the image in any public Docker
+The author does not currently publish the image in any public container
 repository but a script, described below, is provided to easily create your
 own image.
 
@@ -13,7 +12,7 @@ own image.
 The source code, which in this project is primarily shell scripts and the
 Dockerfile, is licensed under the [BSD two-clause license](LICENSE.txt).
 
-## Building the Docker image
+## Building the container image
 
 Copy `config.env.template` to `config.env` and edit to set config values.
 
@@ -29,11 +28,11 @@ chmod 600 imageFiles/tmp_passwords/postgres_pw \
 ```
 
 Create your TLS certs in `imageFiles/tls`.  You need an unencrypted
-privkey.pem and a pubkey.pem.  If you want to generate a self-signed
+`privkey.pem` and a `pubkey.pem`.  If you want to generate a self-signed
 certificate, you can use the [generateTLSCert.sh](generateTLSCert.sh)
 script.
 
-This image depends on the the base BIDMS Debian Docker image from the
+This image depends on the the base BIDMS Debian container image from the
 [bidms-docker-debian-base](http://www.github.com/calnet-oss/bidms-docker-debian-base)
 project.  If you don't have that image built yet, you'll need that first.
 
@@ -68,7 +67,7 @@ You can then use your favorite PostgreSQL client to connect to it.
 If running interactively, you can exit the container by exiting the bash
 shell.  If running in detached mode, you can stop the container with: 
 `docker stop bidms-postgresql` or there is a `stopContainer.sh` script included
-to do this.
+to do this.  (You may replace docker commands with podman if you prefer.)
 
 To inspect the running container from the host:
 ```
@@ -82,7 +81,7 @@ docker ps
 
 ## Database Persistence
 
-Docker will mount the host directory specified in
+The container runtime will mount the host directory specified in
 `HOST_POSTGRESQL_DIRECTORY` from `config.env` within the container as
 `/var/lib/postgresql` and this is how the database is persisted across
 container runs.
@@ -104,7 +103,7 @@ image on.  When copying, be careful about preserving file permissions.
 If you're running Linux, it's 
 [a good idea to disable kernel transparent hugepages](https://askubuntu.com/questions/597372/how-do-i-modify-sys-kernel-mm-transparent-hugepage-enabled)
 because it is not recommended for database machines and can hurt performance. 
-This should be done on the host running the PostgreSQL docker container.
+This should be done on the host running the PostgreSQL container.
 
 There are multiple ways to do this, but if you're running a flavor of Linux
 with `/etc/default/grub` (such as Debian or Ubuntu), then the easiest way is

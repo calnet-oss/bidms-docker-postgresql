@@ -57,6 +57,11 @@ fi
 echo "Using config values from $CONFIG_FILE"
 . $CONFIG_FILE || check_exit
 
+if [ -z "$RUNTIME_CMD" ]; then
+  # Can be overriden in config.env to be podman instead.
+  RUNTIME_CMD=docker
+fi
+
 if [ ! -z "$NETWORK" ]; then
   echo "NETWORK=$NETWORK"
   NETWORKPARAMS+="--network $NETWORK "
@@ -85,7 +90,7 @@ if [[ $USE_HOST_VOLUMES && -z "$NO_HOST_POSTGRESQL_DIRECTORY" && ! -z "$HOST_POS
 else
   # Docker will choose where it wants to put it on the host.
   # Use docker inspect bidms-postgresql to find out where.
-  echo "HOST_POSTGRESQL_DIRECTORY not set.  Using docker default."
+  echo "HOST_POSTGRESQL_DIRECTORY not set.  Using container default."
 fi
 
 if [[ -z "$NO_INTERACTIVE" && -z "$INTERACTIVE_PARAMS" ]]; then
@@ -114,7 +119,7 @@ else
 fi
 echo "IMAGE=$IMAGE"
 
-$SUDO docker run $INTERACTIVE_PARAMS --name "bidms-postgresql" \
+$SUDO $RUNTIME_CMD run $INTERACTIVE_PARAMS --name "bidms-postgresql" \
   $MOUNTPARAMS \
   $NETWORKPARAMS \
   $RESTARTPARAMS \
@@ -124,5 +129,5 @@ $SUDO docker run $INTERACTIVE_PARAMS --name "bidms-postgresql" \
   $ENTRYPOINT_ARGS || check_exit
 
 if [ ! -z "$NO_INTERACTIVE" ]; then
-  echo "Running in detached mode.  Stop the container with 'docker stop bidms-postgresql'."
+  echo "Running in detached mode.  Stop the container with '$RUNTIME_CMD stop bidms-postgresql'."
 fi

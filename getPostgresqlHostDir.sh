@@ -1,7 +1,13 @@
 #!/bin/bash
 
+. ./config.env
+
+if [ -z "$RUNTIME_CMD" ]; then
+  RUNTIME_CMD=docker
+fi
+
 CONTAINER_DIR="/var/lib/postgresql"
-INSPECT=$(docker inspect bidms-postgresql | sed -e '/Source/,/Destination/!d')
+INSPECT=$($RUNTIME_CMD inspect bidms-postgresql | sed -e '/Source/,/Destination/!d')
 
 while read -ra arr; do
   if [ "${arr[0]}" == '"Source":' ]; then
