@@ -65,13 +65,19 @@ else
   exit 1
 fi
 
+if [ ! -z "$POSTGRESQL_VERSION" ]; then
+  echo "POSTGRESQL_VERSION=$POSTGRESQL_VERSION"
+else
+  echo "ERROR: Required POSTGRESQL_VERSION value missing from $CONFIG_FILE"
+  exit 1
+fi
+
 if [ ! -z "$LOCAL_POSTGRESQL_PORT" ]; then
-  echo "LOCAL_DIR_PORT=$LOCAL_POSTGRESQL_PORT"
+  echo "LOCAL_POSTGRESQL_PORT=$LOCAL_POSTGRESQL_PORT"
 else
   echo "ERROR: Required LOCAL_POSTGRESQL_PORT value missing from $CONFIG_FILE"
   exit 1
 fi
-
 
 if [[ $USE_HOST_VOLUMES && -z "$NO_HOST_POSTGRESQL_DIRECTORY" && ! -z "$HOST_POSTGRESQL_DIRECTORY" ]]; then
   echo "HOST_POSTGRESQL_DIRECTORY=$HOST_POSTGRESQL_DIRECTORY"
