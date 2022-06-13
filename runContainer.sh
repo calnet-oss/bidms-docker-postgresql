@@ -108,6 +108,10 @@ else
   RESTARTPARAMS="--rm"
 fi
 
+if [ ! -z "$SHM_SIZE" ]; then
+  RUNTIMEPARAMS="--shm-size=$SHM_SIZE "
+fi
+  
 if [ ! -z "$USE_SUDO" ]; then
   SUDO=sudo
 fi
@@ -123,6 +127,7 @@ $SUDO $RUNTIME_CMD run $INTERACTIVE_PARAMS --name "bidms-postgresql" \
   $MOUNTPARAMS \
   $NETWORKPARAMS \
   $RESTARTPARAMS \
+  $RUNTIMEPARAMS \
   -p $LOCAL_POSTGRESQL_PORT:5432 \
   $* \
   $IMAGE \
