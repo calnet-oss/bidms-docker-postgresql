@@ -37,7 +37,7 @@ else
   container_startup
   # if tail is interrupted and this signal handler executes, it will kill tail
   # and run container_shutdown
-  trap 'kill ${!}; container_shutdown' SIGHUP SIGINT SIGQUIT SIGTERM SIGCHLD SIGSTOP
+  trap 'kill ${!}; container_shutdown' SIGHUP SIGINT SIGQUIT SIGTERM SIGSTOP
   echo "PostgreSQL is running"
 
   while true
