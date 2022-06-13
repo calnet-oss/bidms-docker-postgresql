@@ -67,6 +67,14 @@ else
   exit 1
 fi
 
+if [ ! -z "$DEBIAN_VERSION" ]; then
+  echo "DEBIAN_VERSION=$DEBIAN_VERSION"
+  ARGS+="--build-arg DEBIAN_VERSION=$DEBIAN_VERSION "
+else
+  echo "ERROR: Required DEBIAN_VERSION value missing from $CONFIG_FILE"
+  exit 1
+fi
+
 if [ ! -z "$APT_PROXY_URL" ]; then
   ARGS+="--build-arg APT_PROXY_URL=$APT_PROXY_URL "
 elif [ -e $HOME/.aptproxy ]; then

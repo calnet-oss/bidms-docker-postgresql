@@ -24,16 +24,21 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
-FROM bidms/debian_base:buster
+ARG DEBIAN_VERSION
+FROM bidms/debian_base:${DEBIAN_VERSION}
 
 ARG APT_PROXY_URL=
 RUN if [ ! -z "$APT_PROXY_URL" ]; then echo "Acquire::http::Proxy \"$APT_PROXY_URL\";" > /etc/apt/apt.conf.d/00aptproxy; else echo "not using apt proxy"; fi
 
+ARG DEBIAN_VERSION
 ARG POSTGRESQL_VERSION
+
+RUN if [ -z "$POSTGRESQL_VERSION" ]; then echo "POSTGRESQL_VERSION is missing" > /dev/stderr && false; fi
+RUN if [ -z "$DEBIAN_VERSION" ]; then echo "DEBIAN_VERSION is missing" > /dev/stderr && false; fi
 
 RUN set -x \
   && export DEBIAN_FRONTEND=noninteractive \
-  && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main ${POSTGRESQL_VERSION}" > /etc/apt/sources.list.d/pgdg.list \
+  && echo "deb http://apt.postgresql.org/pub/repos/apt/ ${DEBIAN_VERSION}-pgdg main ${POSTGRESQL_VERSION}" > /etc/apt/sources.list.d/pgdg.list \
   && apt-get install -y gnupg2 \
   && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - \
   && apt-get purge -y gnupg2 \
