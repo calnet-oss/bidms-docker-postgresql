@@ -4,7 +4,7 @@ s/#ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'/ssl_ciphers = 'TLSv1.2:!aNULL:!eNULL
 s/#ssl_prefer_server_ciphers = on/ssl_prefer_server_ciphers = on/
 s@ssl_cert_file = '/etc/ssl/certs/ssl-cert-snakeoil.pem'@ssl_cert_file = '/var/lib/postgresql/certs/pubkey.pem'@
 s@ssl_key_file = '/etc/ssl/private/ssl-cert-snakeoil.key'@ssl_key_file = '/var/lib/postgresql/certs/privkey.pem'@
-s/#password_encryption = md5/password_encryption = scram-sha-256/
+s/#password_encryption = scram-sha-256/password_encryption = scram-sha-256/
 s/#max_prepared_transactions = 0/max_prepared_transactions = $PG_MAX_PREPARED_TRANSACTIONS/
 s/#shared_preload_libraries = ''/shared_preload_libraries = 'pg_stat_statements'/
 s/#wal_level = replica/wal_level = replica/

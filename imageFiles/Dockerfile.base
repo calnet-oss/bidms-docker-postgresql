@@ -64,7 +64,7 @@ RUN /etc/init.d/postgresql stop \
        /usr/lib/postgresql/${POSTGRESQL_VERSION}/bin/initdb \
        --encoding=UTF8 --locale=$POSTGRESQL_LOCALE \
        -D /var/lib/postgresql/${POSTGRESQL_VERSION}/main \
-       --pwfile=/tmp/tmp_passwords/postgres_pw --auth=md5 \
+       --pwfile=/tmp/tmp_passwords/postgres_pw --auth=scram-sha-256 \
   && echo -n "localhost:5432:*:postgres:" > /var/lib/postgresql/.pgpass \
   && chmod 600 /var/lib/postgresql/.pgpass \
   && cat /tmp/tmp_passwords/postgres_pw >> /var/lib/postgresql/.pgpass \
@@ -177,8 +177,8 @@ RUN set -x \
 # Verify pg_hba.conf values.  We do this because the original strings
 # that are replaced can change from version to version.
 RUN set -x \
-  && result=$(egrep "^local   all             all                                     md5" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf) && [ ! -z "$result" ] \
-  && result=$(egrep "^hostssl all             all             172.18.0.0/24           md5" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf) && [ ! -z "$result" ]
+  && result=$(egrep "^local   all             all                                     scram-sha-256" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf) && [ ! -z "$result" ] \
+  && result=$(egrep "^hostssl all             all             172.18.0.0/24           scram-sha-256" /var/lib/postgresql/${POSTGRESQL_VERSION}/main/pg_hba.conf) && [ ! -z "$result" ]
 
 RUN rm -rf /tmp/tmp_passwords /tmp/postgresql_conf.sed /tmp/pg_hba_conf.sed /core
 

@@ -54,7 +54,7 @@ if [ -z "$RUNTIME_CMD" ]; then
   RUNTIME_CMD=docker
 fi
 
-if [ ! -z "$NETWORK" ]; then
+if [ ! -z "$NETWORK" -a "$BUILDTIME_CMD" != "buildah" ]; then
   echo "NETWORK=$NETWORK"
   ARGS+="--network $NETWORK "
 fi
